@@ -1,0 +1,21 @@
+#define JSTX A1
+#define JSTY A2
+#define BUTTON1 4
+#define BUTTON2 5
+
+void setup() {
+  pinMode(JSTX,INPUT);
+  pinMode(JSTY,INPUT);
+  pinMode(BUTTON1,INPUT_PULLUP);
+  pinMode(BUTTON2,INPUT_PULLUP);
+
+  Serial.begin(115200);
+}
+
+char str[20];
+void loop() {
+  sprintf(str, "%d %d %d %d", analogRead(JSTX), analogRead(JSTY), !digitalRead(BUTTON1), !digitalRead(BUTTON2));
+  Serial.println(str);
+  delay(100);
+
+}
