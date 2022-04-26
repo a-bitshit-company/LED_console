@@ -1,0 +1,7 @@
+int getIndex(int x, int y, int w, int h){
+  if(y >= h/2){
+    return(x*h/2 + (x%2 ? h-y-1 : y-(h/2)));
+  }else{
+    return(w*h-1 - x*h/2 - (x%2 ? y : (h/2-1)-y));
+  }
+} 
