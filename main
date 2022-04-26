@@ -1,0 +1,60 @@
+TaskHandle_t taskHandles[10];
+void setup() {
+    taskHandles[0] = TaskHandle_t("timeTask");
+    taskHandles[1] = TaskHandle_t("tempTask");
+    taskHandles[2] = TaskHandle_t("pongTask");
+  //3 highest prio
+  xTaskCreate(master,"master", 512, NULL, 1, NULL);
+  xTaskCreate(tempScreen,"tempAndHum", 512, NULL, 1, &taskHandles[1]);
+  xTaskCreate(timeScreen,"time", 512, NULL, 1, &taskHandles[0]);
+  xTaskCreate(pongScreen,"pong", 512, NULL, 1, &taskHandles[2]);
+}
+
+
+int currentTask;
+void master(void* pvparameters){
+  //has to make sure only one task is running at a time
+  vTaskDelay(200 / portTICK_PERIOD_MS);
+  //vTaskSuspend(handle);
+  //vTaskGetInfo()
+
+  while(true){
+    int taskArrLen = sizeof(taskHandles) / sizeof(TaskHandle_t);
+    for(int i = 0; i<taskArrLen;i++){
+      if(
+    }
+  }
+
+  //topText();
+  //bottomText();
+
+}
+
+void timeScreen(void* pvparameters){
+  while(true){
+    Serial.println("time");
+    vTaskDelay(300 / portTICK_PERIOD_MS);
+  }
+}
+
+void tempScreen(void* pvparameters){
+  while(true){
+    Serial.println("tempHum");
+    vTaskDelay(300 / portTICK_PERIOD_MS);
+  }
+  
+}
+
+void pongScreen(void* pvparameters){
+  while(true){
+    Serial.println("pong");
+    vTaskDelay(300 / portTICK_PERIOD_MS);
+  }
+}
+
+
+
+void loop() {
+  // put your main code here, to run repeatedly:
+
+}
