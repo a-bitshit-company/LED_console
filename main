@@ -1,48 +1,60 @@
-TaskHandle_t taskHandles[10];
+//task handling
+TaskHandle_t menuHandles[2];
+int currentTask;
+
+//Inputs
 struct ctrlState{
   int X,Y;
   boolean A,B;
 };
 ctrlState *ctrl_A, *ctrl_B, *ctrl_T;
 
+//mode enum
+enum Emode{menu, game, idle};
+Emode mode = menu;
+
 void setup() {
   //3 highest prio
   //essential tasks
   xTaskCreate(master,"master", 512, NULL, 3, NULL);
   xTaskCreate(inputTask,"inputs", 512, NULL, 3, NULL);
+  xTaskCreate(idleTask,"idle screen", 512, NULL, 3, NULL);
 
   
-  taskHandles[0] = TaskHandle_t("timeTask");
-  taskHandles[1] = TaskHandle_t("tempTask");
-  taskHandles[2] = TaskHandle_t("pongTask");
-  xTaskCreate(tempScreen,"tempAndHum", 512, NULL, 1, &taskHandles[1]);
-  xTaskCreate(timeScreen,"time", 512, NULL, 1, &taskHandles[0]);
-  xTaskCreate(pongScreen,"pong", 512, NULL, 1, &taskHandles[2]);
+  menuHandles[0] = TaskHandle_t("timeTask");
+  menuHandles[1] = TaskHandle_t("tempTask");
+  menuHandles[2] = TaskHandle_t("pongTask");
+  xTaskCreate(tempScreen,"tempAndHum", 512, NULL, 1, &menuHandles[1]);
+  xTaskCreate(timeScreen,"time", 512, NULL, 1, &menuHandles[0]);
+  xTaskCreate(pongScreen,"pong", 512, NULL, 1, &menuHandles[2]);
 }
 
 //die Tasks werden aufgerufen, welche die klickbar sind brauchen eigenen Title screen der auf den knopfdruck reagiert
-int currentTask;
-enum Emode{Menu, Game, idle};
-Emode mode = Menu;
 void master(void* pvparameters){
   //has to make sure only one task is running at a time
   vTaskDelay(200 / portTICK_PERIOD_MS);
-  if(mode = Menu){
+  if(mode = menu){
     while(true){
-      int taskArrLen = sizeof(taskHandles) / sizeof(TaskHandle_t);
+      int taskArrLen = sizeof(menuHandles) / sizeof(menuHandles[0]);
       for(int i = 0; i<taskArrLen;i++){   
         //suspend all unwanted tasks
-        if(eTaskGetState(taskHandles[i]) == eTaskState(eRunning)){
+        if(eTaskGetState(menuHandles[i]) == eTaskState(eRunning)){
           if(i != currentTask){
-            vTaskSuspend(taskHandles[i]);
+            vTaskSuspend(menuHandles[i]);
           }
         }
         //start current Task if needed
-        if(i = currentTask && eTaskGetState(taskHandles[i]) != eTaskState(eRunning)){
-          vTaskResume(taskHandles[i]);
+        if(i = currentTask && eTaskGetState(menuHandles[i]) != eTaskState(eRunning)){
+          vTaskResume(menuHandles[i]);
         }
       }
-      if(ctrl_A->B)currentTask= ++currentTask%taskArrLen;
+      if(ctrl_A->B){
+        if(ctrl_A->A){
+          mode = idle;
+        }else{
+          currentTask= ++currentTask%taskArrLen;
+        }
+      }
       vTaskDelay(10 / portTICK_PERIOD_MS);
     }
   }
@@ -65,6 +77,8 @@ void tempScreen(void* pvparameters){
 
 void pongScreen(void* pvparameters){
   while(true){
+    //titlescreen am anfang(schrift was da kommt wenn ma klickt)
+    //iwas von wegen button a gedrückt, dann spielstart und wenn beide Knöpfe 2sek gedrückt wieder menu mode
     Serial.println("pong");
     vTaskDelay(300 / portTICK_PERIOD_MS);
   }
@@ -132,7 +146,6 @@ void parseInput(char str[], struct ctrlState *ctrl){
   ctrl->B = str[i+1]=='1';
   ctrl->A = str[i+3]=='1';
 }
-
 void printCtrl(struct ctrlState *ctrl){
   Serial.print(ctrl_T->X);
   Serial.print(" ");
@@ -142,6 +155,12 @@ void printCtrl(struct ctrlState *ctrl){
   Serial.print(" ");
   Serial.println(ctrl_T->B);
   Serial.println();
+}
+
+
+void idleTask(void* pvparam){
+  //bla bla cooles muster und so
+  //irgendein knopf gedrückt mode = menu;
 }
 
 void loop() {
