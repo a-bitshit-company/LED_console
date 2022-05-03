@@ -20,7 +20,7 @@ void setup() {
   xTaskCreate(pongScreen,"pong", 512, NULL, 1, &taskHandles[2]);
 }
 
-
+//die Tasks werden aufgerufen, welche die klickbar sind brauchen eigenen Title screen der auf den knopfdruck reagiert
 int currentTask;
 enum Emode{Menu, Game, idle};
 Emode mode = Menu;
