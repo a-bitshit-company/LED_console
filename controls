@@ -1,0 +1,11 @@
+MODES: Idle, menu, game
+
+idle:
+any button pressed --> menu mode
+
+menu: 
+button right --> next menu slide
+button left --> select/enter slide(if possible)
+
+game: 
+both buttons pressed 2 sec --> back to menu
