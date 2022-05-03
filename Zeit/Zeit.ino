@@ -17,6 +17,8 @@ void printLocalTime()
   }
   //Serial.println(&timeinfo, "%A, %B %d %Y %H:%M:%S");
     Serial.println(&timeinfo, "%H:%M:%S");
+    Serial.println(&timeinfo, "%d,%B,%Y");
+
 
 }
 
