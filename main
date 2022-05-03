@@ -1,10 +1,14 @@
 TaskHandle_t taskHandles[10];
 void setup() {
-    taskHandles[0] = TaskHandle_t("timeTask");
-    taskHandles[1] = TaskHandle_t("tempTask");
-    taskHandles[2] = TaskHandle_t("pongTask");
   //3 highest prio
-  xTaskCreate(master,"master", 512, NULL, 1, NULL);
+  //essential tasks
+  xTaskCreate(master,"master", 512, NULL, 3, NULL);
+  xTaskCreate(inputTask,"inputs", 512, NULL, 3, NULL);
+
+  
+  taskHandles[0] = TaskHandle_t("timeTask");
+  taskHandles[1] = TaskHandle_t("tempTask");
+  taskHandles[2] = TaskHandle_t("pongTask");
   xTaskCreate(tempScreen,"tempAndHum", 512, NULL, 1, &taskHandles[1]);
   xTaskCreate(timeScreen,"time", 512, NULL, 1, &taskHandles[0]);
   xTaskCreate(pongScreen,"pong", 512, NULL, 1, &taskHandles[2]);
@@ -12,22 +16,28 @@ void setup() {
 
 
 int currentTask;
+enum Emode{Menu, Game, idle};
+enum mode;
 void master(void* pvparameters){
   //has to make sure only one task is running at a time
   vTaskDelay(200 / portTICK_PERIOD_MS);
-  //vTaskSuspend(handle);
-  //vTaskGetInfo()
-
   while(true){
     int taskArrLen = sizeof(taskHandles) / sizeof(TaskHandle_t);
-    for(int i = 0; i<taskArrLen;i++){
-      if(
+    for(int i = 0; i<taskArrLen;i++){   
+      //suspend all unwanted tasks
+      if(eTaskGetState(taskHandles[i]) == eTaskState(eRunning)){
+        if(i != currentTask){
+          vTaskSuspend(taskHandles[i]);
+        }
+      }
+      //start current Task if needed
+      if(i = currentTask && eTaskGetState(taskHandles[i]) != eTaskState(eRunning)){
+        vTaskResume(taskHandles[i]);
+      }
     }
+    
+    vTaskDelay(10 / portTICK_PERIOD_MS);
   }
-
-  //topText();
-  //bottomText();
-
 }
 
 void timeScreen(void* pvparameters){
@@ -52,9 +62,60 @@ void pongScreen(void* pvparameters){
   }
 }
 
+struct ctrlState{
+  int X,Y;
+  boolean A,B;
+};
+//Controller A, controller B, temporärer Speicher
+ctrlState *ctrl_A, *ctrl_B, *ctrl_T;
+void inputTask(void* pvparam) {
+  Serial.begin(115200);
+  Serial1.begin(115200, SERIAL_8N1, 16,17);
+  Serial2.begin(115200, SERIAL_8N1, 9,10);
+  
+  ctrl_A=(ctrlState *)malloc(sizeof(ctrlState));
+  ctrl_B=(ctrlState *)malloc(sizeof(ctrlState));
+  ctrl_T=(ctrlState *)malloc(sizeof(ctrlState));
 
+  char in[16];
+  int i;
+  for(;;) {
+    while(Serial1.available()>0){
+      in[i] = Serial1.read();
+      
+      if(in[i] == '\n'){
+        i=0;
+        parseInput(in, ctrl_T);
+        
+        ctrlState *tmp=ctrl_A;
+        ctrl_A=ctrl_T;
+        ctrl_T=tmp;
+
+        printCtrl(ctrl_A);
+      }else{
+        i++;
+      }
+    }
+    vTaskDelay(20);
+    while(Serial2.available()>0){
+      in[i] = Serial2.read();
+      
+      if(in[i] == '\n'){
+        i=0;
+        parseInput(in, ctrl_T);
+        
+        ctrlState *tmp=ctrl_B;
+        ctrl_B=ctrl_T;
+        ctrl_T=tmp;
+
+        printCtrl(ctrl_B);
+      }else{
+        i++;
+      }
+    }
+    vTaskDelay(20);
+  }
+}
 
 void loop() {
-  // put your main code here, to run repeatedly:
-
 }
