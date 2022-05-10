@@ -6,8 +6,9 @@ ctrlState *ctrl_A, *ctrl_B, *ctrl_T;
 void setup(){}
 void loop(){}
 void inputTask(void* pvparam) {
-  Serial.begin(115200);
+  Serial.begin(115200, );
   Serial1.begin(115200, SERIAL_8N1, 16,17);
+  Serial2.begin(115200, SERIAL_8N1, 9,10);
   ctrl_A=(ctrlState *)malloc(sizeof(ctrlState));
   ctrl_B=(ctrlState *)malloc(sizeof(ctrlState));
   ctrl_T=(ctrlState *)malloc(sizeof(ctrlState));
