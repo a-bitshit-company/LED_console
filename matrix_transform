@@ -1,7 +1,68 @@
+#include <Adafruit_GFX.h>
+#include <FastLED.h>
+#include <FastLED_NeoMatrix.h>
+#define PIN 4
+#define PIN2 2
+
+#define mw 32
+#define mh 8
+#define NUMMATRIX (mw*mh)
+
+CRGB matrixleds1[NUMMATRIX];
+CRGB matrixleds2[NUMMATRIX];
+
+FastLED_NeoMatrix *matrix1 = new FastLED_NeoMatrix(matrixleds1, mw, mh, 1, 1,     
+      NEO_MATRIX_TOP     + NEO_MATRIX_LEFT +
+      NEO_MATRIX_COLUMNS + NEO_MATRIX_ZIGZAG );
+
+      FastLED_NeoMatrix *matrix2 = new FastLED_NeoMatrix(matrixleds2, mw, mh, 1, 1,     
+      NEO_MATRIX_BOTTOM  + NEO_MATRIX_LEFT +
+      NEO_MATRIX_COLUMNS + NEO_MATRIX_ZIGZAG );
+
+void setup() {
+  Serial.begin(9600);
+  
+  FastLED.addLeds<NEOPIXEL, PIN>(matrixleds1, NUMMATRIX);
+  FastLED.addLeds<NEOPIXEL, PIN2>(matrixleds2, NUMMATRIX);
+
+  matrix1->begin();
+  matrix1->setTextWrap(false);
+  matrix1->setBrightness(10);
+    
+  matrix2->begin();
+  matrix2->setTextWrap(false);
+  matrix2->setBrightness(10);
+  FastLED.clear();
+}
+
+void loop() {
+  for(int y = 0; y < mh*2; y++){
+    for(int x = 0; x < mw; x++){
+      setPixel(x, y, CRGB::White);
+      matrix1->show();
+      matrix2->show();
+
+      delay(50);
+    }
+  }
+}
+
+void setPixel(int x, int y, CRGB color){
+  if(y<mh){
+    y+=mh;
+    matrixleds2[255-(getIndex(x, y, mw, mh*2)-mw*mh)]=color;
+    Serial.println(255-(getIndex(x, y, mw, mh*2)-mw*mh));
+  }else{
+    y-=mh;
+    matrixleds1[255-getIndex(x, y, mw, mh*2)]=color;
+    Serial.println(getIndex(x, y, mw, mh*2));
+  }
+}
+
 int getIndex(int x, int y, int w, int h){
   if(y >= h/2){
     return(x*h/2 + (x%2 ? h-y-1 : y-(h/2)));
   }else{
     return(w*h-1 - x*h/2 - (x%2 ? y : (h/2-1)-y));
   }
-} 
+}
