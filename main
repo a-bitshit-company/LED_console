@@ -1,6 +1,17 @@
+/*etask:
+ * 0:running
+ * 1:ready
+ * 2:blocked
+ * 3:suspended
+ */
+
+
 //task handling
 TaskHandle_t menuHandles[2];
-int currentTask;
+int currentTask = 1;
+//0: idle, 1: menu, 2: window
+//
+int mode;
 
 //Inputs
 struct ctrlState{
@@ -10,86 +21,90 @@ struct ctrlState{
 ctrlState *ctrl_A, *ctrl_B, *ctrl_T;
 
 //mode enum
-//enum Emode{menu, game, idle};
+//enum Emode{idle, menu, game};
 //Emode mode;
-int mode;
 
 void setup() {
    Serial.begin(115200);
    mode = 1; 
   //3 highest prio
   //essential tasks
-  xTaskCreate(master,"master", 2048, NULL, 2, NULL);
   //xTaskCreate(inputTask,"inputs", 512, NULL, 3, NULL);
+  xTaskCreate(master,"master", 4096, NULL, 2, NULL);
   //xTaskCreate(idleTask,"idle screen", 512, NULL, 1, NULL);
 
   
   menuHandles[0] = TaskHandle_t("timeTask");
   menuHandles[1] = TaskHandle_t("tempTask");
   menuHandles[2] = TaskHandle_t("pongTask");
- //xTaskCreate(tempScreen,"tempAndHum", 512, NULL, 1, &menuHandles[1]);
- //xTaskCreate(timeScreen,"time", 512, NULL, 1, &menuHandles[0]);
- //xTaskCreate(pongScreen,"pong", 512, NULL, 1, &menuHandles[2]);
+  xTaskCreate(tempScreen,"tempAndHum", 512, NULL, 1, &menuHandles[1]);
+  xTaskCreate(timeScreen,"time", 512, NULL, 1, &menuHandles[0]);
+  xTaskCreate(pongScreen,"pong", 512, NULL, 1, &menuHandles[2]);
 }
 
 //die Tasks werden aufgerufen, welche die klickbar sind brauchen eigenen Title screen der auf den knopfdruck reagiert
+//has to make sure only one task is running at a time
 void master(void* pvparameters){
-  //has to make sure only one task is running at a time
-  vTaskDelay(200 / portTICK_PERIOD_MS);
+  vTaskDelay(1000);
   Serial.println("masterTask started");
   while(true){
-    Serial.println("masterTask running");
+    Serial.print("masterTask running in mode: ");
     Serial.println(mode);
-   if(mode == 1){
-    while(true){
-      /*int taskArrLen = sizeof(menuHandles) / sizeof(menuHandles[0]);
-      for(int i = 0; i<taskArrLen;i++){   
-        //suspend all unwanted tasks
-        if(eTaskGetState(menuHandles[i]) == eTaskState(eRunning)){
+    if(mode == 1){
+      while(true){
+        int taskArrLen = sizeof(menuHandles) / sizeof(menuHandles[0]);
+        for(int i = 0; i<=taskArrLen;i++){
+          Serial.print("Checking task: ");
+          Serial.println(i);
+          //suspend all unwanted tasks
           if(i != currentTask){
-            vTaskSuspend(menuHandles[i]);
-            Serial.print("task suspended: ");
-            Serial.println(i);
+            if(eTaskGetState(menuHandles[i]) == eTaskState(eRunning) || eTaskGetState(menuHandles[i]) == eTaskState(eReady) || eTaskGetState(menuHandles[i]) == eTaskState(eBlocked)){
+              vTaskSuspend(menuHandles[i]);
+              Serial.print("  task suspended: ");
+              Serial.println(i);
+            }
+          }
+          //start current Task if needed
+          if(i == currentTask){
+            if(eTaskGetState(menuHandles[i]) == eTaskState(eSuspended)){//!= eTaskState(eRunning) || eTaskGetState(menuHandles[i]) != eTaskState(eReady) || eTaskGetState(menuHandles[i]) != eTaskState(eBlocked)){
+              vTaskResume(menuHandles[i]);
+              Serial.print("  task resumed: ");
+              Serial.print(i);
+              Serial.println(eTaskGetState(menuHandles[i]));
+            }
+          } 
+        }
+        if(ctrl_A){
+          if(ctrl_A->B){
+            if(ctrl_A->A){
+              mode = 0;
+              break;
+              Serial.println("mode changed to idle");
+            }else{
+              currentTask= ++currentTask%taskArrLen;
+              Serial.println("changed to Screen: ");
+              Serial.println(currentTask);
+            }
           }
         }
-        //start current Task if needed
-        if(i = currentTask && eTaskGetState(menuHandles[i]) != eTaskState(eRunning)){
-          vTaskResume(menuHandles[i]);
-          Serial.print("task resumed: ");
-          Serial.println(i);
-        }
-      }*/
-      if(ctrl_A){
-      if(ctrl_A->B){
-        if(ctrl_A->A){
-          mode = 2;
-          break;
-          Serial.println("mode changed to idle");
-        }else{
-          //currentTask= ++currentTask%taskArrLen;
-          Serial.println("changed to Screen: ");
-          Serial.println(currentTask);
-        }
-      }
-      Serial.println("da passiert was");
-      vTaskDelay(10 / portTICK_PERIOD_MS);
-    }}
+      vTaskDelay(500);
+     }
+     vTaskDelay(20);
+    }
   }
-  vTaskDelay(20 / portTICK_PERIOD_MS);
- }
 }
 
 void timeScreen(void* pvparameters){
   while(true){
     Serial.println("time");
-    vTaskDelay(300 / portTICK_PERIOD_MS);
+    vTaskDelay(2000);
   }
 }
 
 void tempScreen(void* pvparameters){
   while(true){
     Serial.println("tempHum");
-    vTaskDelay(300 / portTICK_PERIOD_MS);
+    vTaskDelay(2000);
   }
   
 }
@@ -99,7 +114,16 @@ void pongScreen(void* pvparameters){
     //titlescreen am anfang(schrift was da kommt wenn ma klickt)
     //iwas von wegen button a gedrückt, dann spielstart und wenn beide Knöpfe 2sek gedrückt wieder menu mode
     Serial.println("pong");
-    vTaskDelay(300 / portTICK_PERIOD_MS);
+    vTaskDelay(2000);
+  }
+}
+
+void idleTask(void* pvparam){
+  //bla bla cooles muster und so
+  //irgendein knopf gedrückt mode = menu;
+  while(true){
+    Serial.println("idletask");
+    vTaskDelay(5000);
   }
 }
 
@@ -173,16 +197,6 @@ void printCtrl(struct ctrlState *ctrl){
   Serial.print(" ");
   Serial.println(ctrl_T->B);
   Serial.println();
-}
-
-
-void idleTask(void* pvparam){
-  //bla bla cooles muster und so
-  //irgendein knopf gedrückt mode = menu;
-  while(true){
-    Serial.println("bla");
-    vTaskDelay(20 / portTICK_PERIOD_MS);
-  }
 }
 
 void loop() {
