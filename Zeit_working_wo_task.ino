@@ -10,16 +10,16 @@
 #define mw 32
 #define mh 8
 #define NUMMATRIX (mw*mh)
- 
+
 CRGB matrixleds[NUMMATRIX];
 CRGB matrixleds2[NUMMATRIX];
 
 
-FastLED_NeoMatrix *matrix = new FastLED_NeoMatrix(matrixleds, mw, mh, 1, 1,     
+FastLED_NeoMatrix *matrix = new FastLED_NeoMatrix(matrixleds, mw, mh, 1, 1,
       NEO_MATRIX_TOP     + NEO_MATRIX_LEFT +
       NEO_MATRIX_COLUMNS + NEO_MATRIX_ZIGZAG );
-      
-      FastLED_NeoMatrix *matrix2 = new FastLED_NeoMatrix(matrixleds2, mw, mh, 1, 1,     
+
+      FastLED_NeoMatrix *matrix2 = new FastLED_NeoMatrix(matrixleds2, mw, mh, 1, 1,
       NEO_MATRIX_TOP     + NEO_MATRIX_LEFT +
       NEO_MATRIX_COLUMNS + NEO_MATRIX_ZIGZAG );
 
@@ -86,7 +86,7 @@ void setup() {
   matrix2->begin();
   matrix2->setTextWrap(false);
   matrix2->setBrightness(10);
-  
+
   // Initialize Serial Monitor
   Serial.begin(115200);
   Serial.print("Connecting to ");
@@ -115,7 +115,7 @@ void loop() {
       matrix->fillScreen(0);
 
   matrix->setCursor(0,0);
-  matrix->print(Date());
+  matrix->print(Time());
   matrix->setTextColor(matrix->Color(0, 0, 255));
 
     matrix->show();
