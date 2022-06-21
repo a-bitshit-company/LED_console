@@ -35,24 +35,13 @@ FastLED_NeoMatrix *matrix2 = new FastLED_NeoMatrix(matrixleds2, mw, mh, 1, 1,
       NEO_MATRIX_TOP     + NEO_MATRIX_LEFT +
       NEO_MATRIX_COLUMNS + NEO_MATRIX_ZIGZAG );
 
-//task handling
-TaskHandle_t menuHandles[2];
-
-int currentTask = 1;
-
-//0: idle, 1: menu, 2: window
-int mode;
-
-//Inputs
 struct ctrlState{
   int X,Y;
   boolean A,B;
 };
+//Controller A, controller B, temporärer Speicher
 ctrlState *ctrl_A, *ctrl_B, *ctrl_T;
-
-//mode enum
-//enum Emode{idle, menu, game};
-//Emode mode;
+TaskHandle_t menuHandles[2];
 
 void setup() {
   Serial.begin(115200);
@@ -66,7 +55,10 @@ void setup() {
   timeClient.begin();
   timeClient.setTimeOffset(7200);
   
-   mode = 1; //--> menu mode
+
+  ctrl_A=(ctrlState *)malloc(sizeof(ctrlState));
+  ctrl_B=(ctrlState *)malloc(sizeof(ctrlState));
+  ctrl_T=(ctrlState *)malloc(sizeof(ctrlState));
   
   //essential tasks
   //xTaskCreate(inputTask,"inputs", 512, NULL, 3, NULL); //3 highest prio
@@ -82,6 +74,11 @@ void setup() {
   xTaskCreate(pongScreen,"pong", 512, NULL, 1, &menuHandles[2]);
 }
 
+
+
+int currentTask = 1;
+//0: idle, 1: menu, 2: window
+int mode=1;
 //die Tasks werden aufgerufen, welche die klickbar sind brauchen eigenen Title screen der auf den knopfdruck reagiert
 //has to make sure only one task is running at a time
 void master(void* pvparameters){
@@ -143,6 +140,8 @@ void tempScreen(void* pvparameters){
   
 }
 
+
+
 void pongScreen(void* pvparameters){
   while(true){
     //titlescreen am anfang(schrift was da kommt wenn ma klickt)
@@ -151,6 +150,8 @@ void pongScreen(void* pvparameters){
     vTaskDelay(2000);
   }
 }
+
+
 
 void idleTask(void* pvparam){
   //bla bla cooles muster und so
@@ -162,14 +163,19 @@ void idleTask(void* pvparam){
 }
 
 
-//Controller A, controller B, temporärer Speicher
+
+void parseInput(char str[], struct ctrlState *ctrl){
+  ctrl->X = atoi(str);
+  int i;
+  for(i = 0; str[i] != ' '; i++);
+  ctrl->Y = atoi(str+i);
+  for(i++; str[i] != ' '; i++);
+  ctrl->B = str[i+1]=='1';
+  ctrl->A = str[i+3]=='1';
+}
 void inputTask(void* pvparam) {
-  Serial1.begin(115200, SERIAL_8N1, 16,17);
-  Serial2.begin(115200, SERIAL_8N1, 9,10);
-  
-  ctrl_A=(ctrlState *)malloc(sizeof(ctrlState));
-  ctrl_B=(ctrlState *)malloc(sizeof(ctrlState));
-  ctrl_T=(ctrlState *)malloc(sizeof(ctrlState));
+  Serial2.begin(115200, SERIAL_8N1, 16, 17);
+  Serial1.begin(115200, SERIAL_8N1, 12, 14);
 
   char in[16];
   int i;
@@ -184,13 +190,14 @@ void inputTask(void* pvparam) {
         ctrlState *tmp=ctrl_A;
         ctrl_A=ctrl_T;
         ctrl_T=tmp;
-
-        printCtrl(ctrl_A);
+        Serial.println("read A");
+        
       }else{
         i++;
       }
     }
-    vTaskDelay(20 / portTICK_PERIOD_MS);
+    vTaskDelay(20);
+    i=0;
     while(Serial2.available()>0){
       in[i] = Serial2.read();
       
@@ -201,37 +208,18 @@ void inputTask(void* pvparam) {
         ctrlState *tmp=ctrl_B;
         ctrl_B=ctrl_T;
         ctrl_T=tmp;
+        Serial.println("read B");
 
-        Serial.print("A: ");
-        printCtrl(ctrl_A);
-        Serial.print("B: ");
-        printCtrl(ctrl_B);
       }else{
         i++;
       }
     }
-    vTaskDelay(20 / portTICK_PERIOD_MS);
+    vTaskDelay(20);
+    i=0;
   }
 }
-void parseInput(char str[], struct ctrlState *ctrl){
-  ctrl->X = atoi(str);
-  int i;
-  for(i = 0; str[i] != ' '; i++);
-  ctrl->Y = atoi(str+i);
-  for(i++; str[i] != ' '; i++);
-  ctrl->B = str[i+1]=='1';
-  ctrl->A = str[i+3]=='1';
-}
-void printCtrl(struct ctrlState *ctrl){
-  Serial.print(ctrl_T->X);
-  Serial.print(" ");
-  Serial.print(ctrl_T->Y);
-  Serial.print(" ");
-  Serial.print(ctrl_T->A);
-  Serial.print(" ");
-  Serial.println(ctrl_T->B);
-  Serial.println();
-}
+
+
 
 
 String formattedDate;
@@ -260,7 +248,6 @@ String getDate(){
   // Extract time 
   return(dayStamp);
 }
-
 
 void timeScreen(void* pvparam){
   //zeit und datum ausgeben
