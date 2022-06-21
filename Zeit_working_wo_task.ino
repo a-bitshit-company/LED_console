@@ -75,7 +75,6 @@ delay(1000);
 
 
 void setup() {
-  timeClient.setTimeOffset(3600);
 
   FastLED.addLeds<NEOPIXEL, PIN>(matrixleds, NUMMATRIX);
     FastLED.addLeds<NEOPIXEL, PIN2>(matrixleds2, NUMMATRIX);
@@ -109,7 +108,7 @@ void setup() {
   // GMT +8 = 28800
   // GMT -1 = -3600
   // GMT 0 = 0
-  timeClient.setTimeOffset(3600);
+  timeClient.setTimeOffset(7200);
 }
 void loop() {
       matrix->fillScreen(0);
@@ -119,7 +118,6 @@ void loop() {
   matrix->setTextColor(matrix->Color(0, 0, 255));
 
     matrix->show();
-
 
   matrix2->fillScreen(0);
 
